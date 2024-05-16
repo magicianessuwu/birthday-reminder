@@ -98,7 +98,7 @@ fn main() -> io::Result<()> {
 
     if !today_entries.is_empty() {
         let mut stdout = StandardStream::stdout(ColorChoice::Always);
-        stdout.set_color(ColorSpec::new().set_fg(Some(Color::Black)))?;
+        stdout.set_color(ColorSpec::new().set_fg(Some(Color::Green)))?;
         writeln!(&mut stdout, "This is happening in the near future:")?;
 
         for entry in today_entries {
@@ -123,7 +123,7 @@ fn main() -> io::Result<()> {
         
     } else {
         let mut stdout = StandardStream::stdout(ColorChoice::Always);
-        stdout.set_color(ColorSpec::new().set_fg(Some(Color::Black)))?;
+        stdout.set_color(ColorSpec::new().set_fg(Some(Color::Green)))?;
         writeln!(
             &mut stdout,
             "It seems like there is nothing happening in the near future!"
@@ -131,7 +131,7 @@ fn main() -> io::Result<()> {
     }
 
     let mut stdout = StandardStream::stdout(ColorChoice::Always);
-    stdout.set_color(ColorSpec::new().set_fg(Some(Color::Black)))?;
+    stdout.set_color(ColorSpec::new().set_fg(Some(Color::Green)))?;
     writeln!(&mut stdout, "Press ENTER to quit!")?;
     let mut input = String::new();
     io::stdin()
