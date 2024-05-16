@@ -1,6 +1,6 @@
-use chrono::Datelike;
+use chrono::{Local, Datelike, Duration};
 use std::fs::File;
-use std::io::{self, BufRead, Write};
+use std::io::{self, BufRead};
 use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 
 struct CalendarEntry {
@@ -9,6 +9,7 @@ struct CalendarEntry {
     day: Option<u32>,
     name: String,
     color: String,
+    show_before: i64,
 }
 
 impl CalendarEntry {
@@ -18,6 +19,7 @@ impl CalendarEntry {
         let mut day = None;
         let mut name = String::new();
         let mut color = String::new();
+        let mut show_before = 0;
 
         for field in line.split(';') {
             let parts: Vec<&str> = field.split(':').collect();
@@ -30,6 +32,7 @@ impl CalendarEntry {
                 "Day" => day = parts[1].parse().ok(),
                 "Name" => name = parts[1].trim_matches('"').to_string(),
                 "Color" => color = parts[1].trim_matches('"').to_string(),
+                "ShowBefore" => show_before = parts[1].parse().unwrap_or(0),
                 _ => return None,
             }
         }
@@ -40,15 +43,26 @@ impl CalendarEntry {
             day,
             name,
             color,
+            show_before,
         })
     }
 
     fn is_happening_today(&self) -> bool {
-        let now = chrono::Local::now().naive_local();
-        let year_match = self.year.map_or(true, |y| y == now.year() as u32);
-        let month_match = self.month.map_or(true, |m| m == now.month());
-        let day_match = self.day.map_or(true, |d| d == now.day());
-        year_match && month_match && day_match
+        let now = Local::today().naive_local();
+        let show_date = now.checked_sub_signed(Duration::days(self.show_before)).unwrap_or(now);
+        match (self.year, self.month, self.day) {
+            (Some(year), Some(month), Some(day)) => {
+                if year as i32 > show_date.year() {
+                    return false;
+                } else if year as i32 == show_date.year() && month > &show_date.month() {
+                    return false;
+                } else if year as i32 == show_date.year() && month == &show_date.month() && day > &show_date.day() {
+                    return false;
+                }
+                true
+            }
+            _ => false,
+        }
     }
 
     fn get_color(color: &str) -> Option<Color> {
