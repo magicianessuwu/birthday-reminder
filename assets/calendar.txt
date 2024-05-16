@@ -1,7 +1,1 @@
-Year:2024;Month:5;Day:16;Name:"red task";Color:red
-Year:2024;Month:5;Day:16;Name:"green task";Color:green
-Year:2024;Month:5;Day:16;Name:"blue task";Color:blue
-Year:2024;Month:5;Day:16;Name:"pink task";Color:pink
-Year:2024;Month:5;Day:16;Name:"yellow task";Color:yellow
-Year:2024;Month:5;Day:16;Name:"purple task";Color:purple
-Year:2024;Month:5;Day:16;Name:"orange task";Color:orange
+Year:2024;Month:5;Day:27;Name:"Its a birthday!";Color:purple;showEarly:5
