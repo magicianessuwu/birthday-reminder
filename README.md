@@ -6,6 +6,11 @@ There are multiple tags that allow you to customize how your calendar behaves! I
 - Year: `Year:{yearAsInt}` `Year:2024`
 - Month: `Month:{monthAsInt}` `Month:04`
 - Day: `Day:{dayAsInt}` `Day:01`
-- Name: `Name:"{nameHere}"` `Name:"April Fools Day! (Troll all my friends :D)`
+- Name: `Name:"{nameHere}"` `Name:"Happy April Fools Day! (Troll all my friends :D)`
 - Color: `Color:{colorAsString}` `Color:red` - available colors are: `red`, `green`, `blue`, `yellow`, `pink`, `purple` & `orange`
 - Show Entry earlier: `showEarly:{daysAsint}` `showEarly:7`
+
+## Examples
+On 5/27/2024 There is a birthday in purple shown 5 days early so you know before! `Year:2024;Month:5;Day:27;Name:"Its a birthday!";Color:purple;showEarly:5`
+Starting 7 days before April Fools, it will start to show the message in yellow! `Month:4;Day:01;Name:"Happy April Fools Day! (Troll all my friends :D)";Color:yellow;showEarly:7`
+Everyday this will be shown! `Name:"Stay motivated!";Color:green;showEarly:1`
