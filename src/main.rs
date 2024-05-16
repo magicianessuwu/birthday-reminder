@@ -1,6 +1,5 @@
-use chrono::{Local, Datelike, Duration};
 use std::fs::File;
-use std::io::{self, BufRead};
+use std::io::{self, BufRead, Write};
 use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 
 struct CalendarEntry {
@@ -9,7 +8,7 @@ struct CalendarEntry {
     day: Option<u32>,
     name: String,
     color: String,
-    show_before: i64,
+    show_early: i64,
 }
 
 impl CalendarEntry {
@@ -19,7 +18,7 @@ impl CalendarEntry {
         let mut day = None;
         let mut name = String::new();
         let mut color = String::new();
-        let mut show_before = 0;
+        let mut show_early = -1;
 
         for field in line.split(';') {
             let parts: Vec<&str> = field.split(':').collect();
@@ -32,7 +31,7 @@ impl CalendarEntry {
                 "Day" => day = parts[1].parse().ok(),
                 "Name" => name = parts[1].trim_matches('"').to_string(),
                 "Color" => color = parts[1].trim_matches('"').to_string(),
-                "ShowBefore" => show_before = parts[1].parse().unwrap_or(0),
+                "showEarly" => show_early = parts[1].parse().unwrap_or(-1),
                 _ => return None,
             }
         }
@@ -43,26 +42,32 @@ impl CalendarEntry {
             day,
             name,
             color,
-            show_before,
+            show_early,
         })
     }
 
-    fn is_happening_today(&self) -> bool {
-        let now = Local::today().naive_local();
-        let show_date = now.checked_sub_signed(Duration::days(self.show_before)).unwrap_or(now);
-        match (self.year, self.month, self.day) {
+    fn should_show_entry(&self) -> bool {
+        let now = chrono::Local::now().naive_local();
+        let current_date = now.date();
+
+        let entry_date = match (self.year, self.month, self.day) {
             (Some(year), Some(month), Some(day)) => {
-                if year as i32 > show_date.year() {
-                    return false;
-                } else if year as i32 == show_date.year() && month > &show_date.month() {
-                    return false;
-                } else if year as i32 == show_date.year() && month == &show_date.month() && day > &show_date.day() {
-                    return false;
-                }
-                true
+                chrono::NaiveDate::from_ymd_opt(year as i32, month, day)
             }
-            _ => false,
+            _ => Some(current_date), // If any of year, month, or day is missing, consider today's date
+        };
+
+        if let Some(entry_date) = entry_date {
+            // Check if the entry date is within the show_before days
+            let show_before = chrono::Duration::days(self.show_early);
+            let start_date = entry_date - show_before;
+            let end_date = entry_date;
+
+            // Check if the current date falls within the range of [start_date, end_date]
+            return current_date >= start_date && current_date <= end_date;
         }
+
+        false // Return false if the provided date components are invalid
     }
 
     fn get_color(color: &str) -> Option<Color> {
@@ -89,24 +94,49 @@ fn main() -> io::Result<()> {
         .filter_map(|line| CalendarEntry::from_string(&line))
         .collect();
     let today_entries: Vec<&CalendarEntry> =
-        entries.iter().filter(|e| e.is_happening_today()).collect();
+        entries.iter().filter(|e| e.should_show_entry()).collect();
 
     if !today_entries.is_empty() {
-        println!("Events happening today:");
+        let mut stdout = StandardStream::stdout(ColorChoice::Always);
+        stdout.set_color(ColorSpec::new().set_fg(Some(Color::Black)))?;
+        writeln!(&mut stdout, "This is happening in the near future:")?;
+
         for entry in today_entries {
             let mut stdout = StandardStream::stdout(ColorChoice::Always);
             if let Some(color) = CalendarEntry::get_color(&entry.color) {
                 stdout.set_color(ColorSpec::new().set_fg(Some(color)))?;
             }
-            writeln!(&mut stdout, "{}", entry.name)?;
+            
+            let date_string = match (entry.year, entry.month, entry.day) {
+                (Some(year), Some(month), Some(day)) => format!("{}/{}/{}", month, day, year),
+                (Some(year), Some(month), None) => format!("{}/Everyday!/{}", month, year),
+                (Some(year), None, Some(day)) => format!("Every month!/{}/{}", day, year),
+                (Some(year), None, None) => format!("Every month!/Everyday!/{}", year),
+                (None, Some(month), Some(day)) => format!("{}/{}/Every Year!", month, day),
+                (None, Some(month), None) => format!("{}/Everyday!/Every Year!", month),
+                (None, None, Some(day)) => format!("Every month!/{}/Every Year!", day),
+                (None, None, None) => format!("Everyday!"),
+            };
+            
+            writeln!(&mut stdout, "{} - Date: {}", entry.name, date_string)?;
         }
+        
     } else {
-        println!("No events are happening today.");
+        let mut stdout = StandardStream::stdout(ColorChoice::Always);
+        stdout.set_color(ColorSpec::new().set_fg(Some(Color::Black)))?;
+        writeln!(
+            &mut stdout,
+            "It seems like there is nothing happening in the near future!"
+        )?;
     }
 
-    println!("Press ENTER key to close!");
+    let mut stdout = StandardStream::stdout(ColorChoice::Always);
+    stdout.set_color(ColorSpec::new().set_fg(Some(Color::Black)))?;
+    writeln!(&mut stdout, "Press ENTER to quit!")?;
     let mut input = String::new();
-    io::stdin().read_line(&mut input).expect("Failed to read line");
+    io::stdin()
+        .read_line(&mut input)
+        .expect("Failed to read line");
 
     Ok(())
 }
