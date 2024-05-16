@@ -54,20 +54,18 @@ impl CalendarEntry {
             (Some(year), Some(month), Some(day)) => {
                 chrono::NaiveDate::from_ymd_opt(year as i32, month, day)
             }
-            _ => Some(current_date), // If any of year, month, or day is missing, consider today's date
+            _ => Some(current_date),
         };
 
         if let Some(entry_date) = entry_date {
-            // Check if the entry date is within the show_before days
             let show_before = chrono::Duration::days(self.show_early);
             let start_date = entry_date - show_before;
             let end_date = entry_date;
 
-            // Check if the current date falls within the range of [start_date, end_date]
             return current_date >= start_date && current_date <= end_date;
         }
 
-        false // Return false if the provided date components are invalid
+        false
     }
 
     fn get_color(color: &str) -> Option<Color> {
